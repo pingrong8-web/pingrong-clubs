@@ -1,3 +1,265 @@
-選填說明:
-> 新生請填公布的正式學號。
-升高二高三的同學請勿填錯班級，會影響排志願。
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>115學年度 屏東縣屏榮高中社團選填系統</title>
+    <!-- 使用 Tailwind CSS v4 進行美化 -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #eef2f3 0%, #8e9eab 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen py-10 px-4 flex items-center justify-center">
+
+    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full">
+        <!-- 網頁標頭 -->
+        <div class="text-center mb-8 border-b pb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">屏東縣屏榮高級中學</h1>
+            <h2 class="text-xl font-semibold text-blue-600">115學年度 社團選填調查表</h2>
+            <p class="text-sm text-gray-500 mt-2">※ 請填妥個人資訊，並依序選填 <span class="font-bold text-red-500">10 個不重複</span> 的社團志願。</p>
+        </div>
+
+        <!-- 表單開始 -->
+        <form id="clubForm" class="space-y-5">
+            
+            <!-- 基本資訊區塊 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">學生姓名 <span class="text-red-500">*</span></label>
+                    <input type="text" id="name" name="name" required placeholder="請輸入姓名"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">學生學號 <span class="text-red-500">*</span></label>
+                    <input type="text" id="studentId" name="studentId" required placeholder="請輸入學號"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">學生性別 <span class="text-red-500">*</span></label>
+                    <select id="gender" name="gender" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                        <option value="" disabled selected>-- 請選擇性別 --</option>
+                        <option value="男">男生</option>
+                        <option value="女">女生</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">就讀班級 <span class="text-red-500">*</span></label>
+                    <select id="className" name="className" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                        <option value="" disabled selected>-- 請選擇班級 --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 志願選填區塊 -->
+            <div class="border-t pt-6 mt-6">
+                <h3 class="text-base font-bold text-gray-700 mb-4 flex items-center">
+                    <span>【社團志願序選填】</span>
+                    <span class="text-xs font-normal text-gray-500 ml-2">(志願 1 為最想去的社團，不可重複)</span>
+                </h3>
+                
+                <!-- 10個志願下拉選單容器 -->
+                <div id="choicesContainer" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                    <!-- JavaScript 將在此自動產生 10 個下拉選單 -->
+                </div>
+            </div>
+
+            <!-- 提交按鈕 -->
+            <div class="pt-4">
+                <button type="submit" id="submitBtn"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    確認並送出選填資料
+                </button>
+            </div>
+        </form>
+
+        <!-- 訊息提示框 -->
+        <div id="statusMessage" class="mt-4 p-4 rounded-lg hidden text-center font-medium"></div>
+    </div>
+
+    <script>
+        // 部署 GAS 後獲取的應用程式網址請貼在下方：
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWaX19jr7wms5oh21izsyU2c2C1wD_Je0Ptwa-KjUFZO3DTvrF9IY1rfLObh5Yd7fteA/exec";
+        const DEFAULT_SUBMIT_TEXT = "確認並送出選填資料";
+
+        // 班級名冊 (共38班)
+        const classesList = ["普一1","普二2","計一1","計一2","日一1","幼一1","餐一1","餐一2","餐一3","餐一4","電資1","電資2","商一1","普二1","普二2","普二3","計二1","計二2","日二1","餐二1","餐二2","餐二3","餐二4","電二1","資二1","商二1","普三1","普三2","普三3","計三1","計三2","日三1","餐三1","餐三2","餐三3","餐三4","電三1","資三1","商三1"];
+        
+        // 社團名冊 (修正完畢)
+        const clubsList = ["律社","原青社","信望愛","音遊社","桌遊社","熱舞社","街舞社","象棋社","韓舞社","魔術社","棒球社","電競社","男籃社","女籃社","桌球社","排球社","羽球社","滑板社","熱音社","SUP","民謠吉他社","烏克麗麗社","愛書閱讀社","原住民皮雕社","武術散打社","經典西洋電影社","放空人生社1","放空人生社2","全民國防社","極真空手道社","彩妝美學社","世界語","創意手作社","魔方社","合唱團","漫研社"];
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. 初始化班級選單
+            const classSelect = document.getElementById("className");
+            classesList.forEach(cls => {
+                let opt = document.createElement("option");
+                opt.value = cls; opt.textContent = cls;
+                classSelect.appendChild(opt);
+            });
+
+            // 2. 動態渲染 10 個志願序選單
+            const container = document.getElementById("choicesContainer");
+            for (let i = 1; i <= 10; i++) {
+                let div = document.createElement("div");
+                div.className = "flex items-center space-x-3";
+                
+                let label = document.createElement("label");
+                label.className = "w-24 text-sm font-medium text-gray-600";
+                label.innerHTML = `第 ${i} 志願 ${i===1?'<span class="text-red-500">*</span>':''}`;
+                
+                let select = document.createElement("select");
+                select.id = `choice${i}`;
+                select.name = `choice${i}`;
+                select.className = "club-select flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm";
+                if(i === 1) select.required = true;
+
+                let defaultOpt = document.createElement("option");
+                defaultOpt.value = "";
+                defaultOpt.textContent = `-- 請選擇第 ${i} 志願 ${i>1?'(選填)':''} --`;
+                select.appendChild(defaultOpt);
+
+                clubsList.forEach(club => {
+                    let opt = document.createElement("option");
+                    opt.value = club; opt.textContent = club;
+                    select.appendChild(opt);
+                });
+
+                div.appendChild(label);
+                div.appendChild(select);
+                container.appendChild(div);
+            }
+
+            // 3. 監聽變更以實施「重複選取」防呆與停用已選項目
+            document.getElementById("clubForm").addEventListener("change", () => {
+                checkDuplicates();
+                updateDisabledOptions();
+            });
+
+            // 初始一次檢查（以設置正確狀態）
+            checkDuplicates();
+            updateDisabledOptions();
+        });
+
+        function getAllSelects() {
+            return Array.from(document.querySelectorAll(".club-select"));
+        }
+
+        function checkDuplicates() {
+            const selects = getAllSelects();
+            const submitBtn = document.getElementById("submitBtn");
+            const statusMsg = document.getElementById("statusMessage");
+            
+            let selectedValues = [];
+            let hasDuplicate = false;
+
+            selects.forEach(select => {
+                if (select.value !== "") {
+                    if (selectedValues.includes(select.value)) {
+                        hasDuplicate = true;
+                    } else {
+                        selectedValues.push(select.value);
+                    }
+                }
+            });
+
+            if (hasDuplicate) {
+                statusMsg.className = "mt-4 p-4 rounded-lg bg-red-100 text-red-700 text-center font-medium block";
+                statusMsg.textContent = "錯誤：志願社團不能重複選擇！請修正重複的社團。";
+                submitBtn.disabled = true;
+            } else {
+                // 隱藏訊息並恢復按鈕（按鈕是否 enable 也會由其他檢查或 required 決定）
+                statusMsg.className = "mt-4 p-4 rounded-lg hidden text-center font-medium";
+                statusMsg.textContent = "";
+                submitBtn.disabled = false;
+            }
+        }
+
+        // 當一個選單選取了某社團，其他選單中的該選項會被停用（但保留於當前選單）
+        function updateDisabledOptions() {
+            const selects = getAllSelects();
+            const selectedValues = selects.map(s => s.value).filter(v => v !== "");
+
+            selects.forEach(select => {
+                Array.from(select.options).forEach(option => {
+                    if (option.value === "") {
+                        option.disabled = false;
+                        return;
+                    }
+                    // 保留目前 select 已選的選項不要被停用
+                    if (select.value === option.value) {
+                        option.disabled = false;
+                        return;
+                    }
+                    // 若其他 select 已選同名社團，停用此 option
+                    option.disabled = selectedValues.includes(option.value);
+                });
+            });
+        }
+
+        // 4. 送出表單資料至後台
+        document.getElementById("clubForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById("submitBtn");
+            const statusMsg = document.getElementById("statusMessage");
+
+            // 最終再檢查一次重複
+            checkDuplicates();
+            if (submitBtn.disabled) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "資料傳送中...";
+            statusMsg.className = "mt-4 p-4 rounded-lg bg-blue-100 text-blue-700 text-center font-medium block";
+            statusMsg.textContent = "正在寫入資料庫，請勿關閉網頁...";
+
+            const formData = new FormData(this);
+            const searchParams = new URLSearchParams();
+            for (const pair of formData) {
+                searchParams.append(pair[0], pair[1]);
+            }
+
+            fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: searchParams,
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            })
+            .then(res => {
+                // 若非 2xx，仍嘗試解析回應體以取得錯誤訊息
+                return res.json().catch(() => {
+                    throw new Error("伺服器回傳非 JSON 回應或解析失敗 (status " + res.status + ")");
+                }).then(data => ({ ok: res.ok, data }));
+            })
+            .then(({ ok, data }) => {
+                if (ok && data.status === "success") {
+                    statusMsg.className = "mt-4 p-4 rounded-lg bg-emerald-100 text-emerald-700 text-center font-medium block";
+                    statusMsg.textContent = data.message || "送出成功";
+                    document.getElementById("clubForm").reset();
+                    // 重設按鈕文字並重新初始化選項可用性
+                    submitBtn.textContent = DEFAULT_SUBMIT_TEXT;
+                    updateDisabledOptions();
+                } else {
+                    statusMsg.className = "mt-4 p-4 rounded-lg bg-red-100 text-red-700 text-center font-medium block";
+                    statusMsg.textContent = "失敗：" + (data.message || "伺服器回傳錯誤");
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = DEFAULT_SUBMIT_TEXT;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                statusMsg.className = "mt-4 p-4 rounded-lg bg-red-100 text-red-700 text-center font-medium block";
+                statusMsg.textContent = "發生錯誤：無法連線或伺服器錯誤，請稍後再試。";
+                submitBtn.disabled = false;
+                submitBtn.textContent = DEFAULT_SUBMIT_TEXT;
+            });
+        });
+    </script>
+</body>
+</html>
