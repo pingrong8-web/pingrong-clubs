@@ -87,7 +87,7 @@
 
     <script>
         // 部署 GAS 後獲取的應用程式網址請貼在下方：
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzleu28Im7-MuKbPNdnsS8HIVLdO-EPE8etW2RxMnTM-w5NCifLxGtPts5ErzM3NHQ5nw/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWaX19jr7wms5oh21izsyU2c2C1wD_Je0Ptwa-KjUFZO3DTvrF9IY1rfLObh5Yd7fteA/exec";
         const DEFAULT_SUBMIT_TEXT = "確認並送出選填資料";
 
         // 班級名冊 (共38班)
